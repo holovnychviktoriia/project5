@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project4\\..csproj": {}
+    "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj": {}
   },
   "projects": {
-    "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project4\\..csproj": {
+    "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project4\\..csproj",
+        "projectUniqueName": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj",
         "projectName": ".",
-        "projectPath": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project4\\..csproj",
+        "projectPath": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj",
         "packagesPath": "C:\\Users\\kirik\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project4\\obj\\",
+        "outputPath": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\kirik\\AppData\\Roaming\\NuGet\\NuGet.Config"

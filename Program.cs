@@ -3,85 +3,154 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 
 namespace FarmerMarketApp
 {
-    struct Product
-    {
-        public int Id;
-        public string Name;
-        public double Price;
-        public int Quantity;
-
-        public Product(int id, string name, double price, int quantity)
-        {
-            this.Id = id;
-            this.Name = name;
-            this.Price = price;
-            this.Quantity = quantity;
-        }
-
-        public void Display()
-        {
-            Console.WriteLine($"| {Id,-4} | {Name,-15} | {Price,10:F2} | {Quantity,10} |");
-        }
-    }
-
     class Program
     {
-        private static List<Product> products = new List<Product>(); 
-        private const string CORRECT_LOGIN = "user";
-        private const string CORRECT_PASSWORD = "123";
+        private const string PRODUCTS_FILE = "products.csv";
+        private const string USERS_FILE = "users.csv";
 
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            
-            if (LoginSystem())
+            CheckFiles();
+            if (AuthMenu())
             {
                 ShowMainMenu();
             }
-            else
+        }
+
+        static void CheckFiles()
+        {
+            if (!File.Exists(USERS_FILE))
             {
-                Console.WriteLine("\nСпроби вичерпано. Програму завершено.");
+                File.WriteAllText(USERS_FILE, "Id,Email,Password\n");
+                File.AppendAllText(USERS_FILE, "1,admin@gmail.com,12345\n");
+            }
+            if (!File.Exists(PRODUCTS_FILE))
+            {
+                File.WriteAllText(PRODUCTS_FILE, "Id,Name,Price,Quantity\n");
             }
         }
-        
-        static bool LoginSystem()
+
+        static int GenerateNewId(string filePath)
         {
-            Console.Clear();
-            Console.WriteLine("--- СИСТЕМА ВХОДУ ---");
-
-            for (int attempts = 1; attempts <= 3; attempts++)
+            if (!File.Exists(filePath)) return 1;
+            string[] lines = File.ReadAllLines(filePath);
+            if (lines.Length <= 1) return 1;
+            int maxId = 0;
+            for (int i = 1; i < lines.Length; i++)
             {
-                Console.WriteLine($"\nСпроба {attempts} з 3.");
-                Console.Write("Введіть логін: ");
-                string login = Console.ReadLine();
-                Console.Write("Введіть пароль: ");
-                string password = Console.ReadLine();
-
-                if (login == CORRECT_LOGIN && password == CORRECT_PASSWORD)
+                try
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("\nВхід успішний! Доступ надано.");
-                    Console.ResetColor();
-                    Pause();
-                    return true;
+                    string line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    string[] parts = line.Split(',');
+                    if (int.TryParse(parts[0], out int currentId))
+                    {
+                        if (currentId > maxId) maxId = currentId;
+                    }
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            return maxId + 1;
+        }
+        
+        static bool AuthMenu()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("--- ВХІД У СИСТЕМУ ---");
+                Console.WriteLine("1. Вхід (Логін)");
+                Console.WriteLine("2. Реєстрація");
+                Console.WriteLine("0. Вихід");
+                Console.Write("Вибір: ");
+                
+                string choice = Console.ReadLine();
+
+                if (choice == "1")
+                {
+                    if (Login()) return true;
+                }
+                else if (choice == "2")
+                {
+                    Register();
+                }
+                else if (choice == "0")
+                {
+                    return false;
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n❌ Неправильний логін або пароль!");
-                    Console.ResetColor();
-                    
-                    if (attempts == 3) 
+                    Console.WriteLine("Невірний вибір.");
+                    Pause();
+                }
+            }
+        }
+
+        static bool Login()
+        {
+            Console.Write("Введіть Email: ");
+            string email = Console.ReadLine();
+            Console.Write("Введіть Пароль: ");
+            string password = Console.ReadLine();
+            string[] lines = File.ReadAllLines(USERS_FILE);
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Split(',');
+                if (parts.Length >= 3)
+                {
+                    if (parts[1] == email && parts[2] == password)
                     {
-                        Console.WriteLine("Остання спроба невдала.");
-                        break; 
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("Вхід успішний!");
+                        Console.ResetColor();
+                        Pause();
+                        return true;
                     }
                 }
             }
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Невірний логін або пароль.");
+            Console.ResetColor();
+            Pause();
             return false;
+        }
+
+        static void Register()
+        {
+            Console.WriteLine("\n--- РЕЄСТРАЦІЯ ---");
+            Console.Write("Введіть новий Email: ");
+            string email = Console.ReadLine();
+            string[] lines = File.ReadAllLines(USERS_FILE);
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Split(',');
+                if (parts.Length >= 2 && parts[1] == email)
+                {
+                    Console.WriteLine("Користувач з таким Email вже існує!");
+                    Pause();
+                    return;
+                }
+            }
+
+            Console.Write("Введіть пароль: ");
+            string password = Console.ReadLine();
+            int newId = GenerateNewId(USERS_FILE);
+            string newUserLine = $"{newId},{email},{password}\n";
+            File.AppendAllText(USERS_FILE, newUserLine);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Реєстрація успішна! Тепер увійдіть.");
+            Console.ResetColor();
+            Pause();
         }
 
         static void ShowMainMenu()
@@ -91,361 +160,231 @@ namespace FarmerMarketApp
             {
                 Console.Clear();
                 Console.WriteLine("================================================");
-                Console.WriteLine(" ГОЛОВНЕ МЕНЮ 'Фермерського магазину' ");
+                Console.WriteLine(" ГОЛОВНЕ МЕНЮ (Робота з CSV) ");
                 Console.WriteLine("================================================");
-                Console.WriteLine("1. Додати 5 товарів (Початкове заповнення)");
-                Console.WriteLine("2. Переглянути список товарів");
-                Console.WriteLine("3. Обчислити статистику");
-                Console.WriteLine("4. Операції з колекцією (Додати/Пошук/Видалення/Сортування)");
-                Console.WriteLine("0. Вихід з програми");
+                Console.WriteLine("1. Додати товар (запис у файл)");
+                Console.WriteLine("2. Переглянути всі товари (читання з файлу)");
+                Console.WriteLine("3. Видалити товар (перезапис файлу)");
+                Console.WriteLine("4. Пошук товару (у файлі)");
+                Console.WriteLine("5. Статистика (з файлу)");
+                Console.WriteLine("6. Сортування (читання -> сортування -> перезапис)");
+                Console.WriteLine("0. Вихід");
                 Console.Write("Ваш вибір: ");
 
-                string input = Console.ReadLine();
-                if (!int.TryParse(input, out int choice))
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Помилка! Введіть число.");
-                    Console.ResetColor();
-                    Pause();
-                    continue;
-                }
+                string choice = Console.ReadLine();
 
                 switch (choice)
                 {
-                    case 1:
-                        InputInitialProducts();
-                        break;
-                    case 2:
-                        ShowProducts();
-                        break;
-                    case 3:
-                        CalculateStatistics();
-                        break;
-                    case 4:
-                        ShowCollectionMenu();
-                        break;
-                    case 0:
-                        Console.WriteLine("\nПрограма завершена.");
-                        exit = true;
-                        break;
-                    default:
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Невірний вибір!");
-                        Console.ResetColor();
-                        break;
-                }
-
-                if (!exit)
-                {
-                    Pause();
+                    case "1": AddProductToFile(); break;
+                    case "2": ReadAndShowProducts(); break;
+                    case "3": DeleteProductFromFile(); break;
+                    case "4": SearchInFile(); break;
+                    case "5": FileStatistics(); break;
+                    case "6": SortFile(); break;
+                    case "0": exit = true; break;
+                    default: Console.WriteLine("Невірний вибір."); Pause(); break;
                 }
             }
         }
 
-        static void ShowCollectionMenu()
-        {
-            bool back = false;
-            while (!back)
-            {
-                Console.Clear();
-                Console.WriteLine("--- ОПЕРАЦІЇ З КОЛЕКЦІЄЮ ---");
-                Console.WriteLine("1. Додати один новий товар");
-                Console.WriteLine("2. Знайти товар за назвою");
-                Console.WriteLine("3. Видалити товар за ID");
-                Console.WriteLine("4. Сортування (Bubble Sort vs Standard)");
-                Console.WriteLine("0. Повернутися назад");
-                Console.Write("Ваш вибір: ");
-
-                string input = Console.ReadLine();
-                if (!int.TryParse(input, out int choice))
-                {
-                    Console.WriteLine("Невірний ввід.");
-                    Pause();
-                    continue;
-                }
-
-                switch (choice)
-                {
-                    case 1:
-                        AddSingleProduct();
-                        break;
-                    case 2:
-                        SearchProductByName();
-                        break;
-                    case 3:
-                        DeleteProductById();
-                        break;
-                    case 4:
-                        SortMenu();
-                        break;
-                    case 0:
-                        back = true;
-                        break;
-                    default:
-                        Console.WriteLine("Невірний вибір.");
-                        break;
-                }
-                
-                if (!back) Pause();
-            }
-        }
-
-        static void InputInitialProducts()
+        static void AddProductToFile()
         {
             Console.Clear();
-            Console.WriteLine("--- Введення даних про 5 товарів ---");
-            
-            for (int i = 0; i < 5; i++)
-            {
-                Console.WriteLine($"\n>> Введіть дані для товару №{i + 1}:");
-                Product p = CreateProductFromInput();
-                products.Add(p);
-            }
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\nДані про 5 товарів успішно додано до списку!");
-            Console.ResetColor();
-        }
-
-        static void AddSingleProduct()
-        {
-            Console.Clear();
-            Console.WriteLine("--- Додавання нового товару ---");
-            Product p = CreateProductFromInput();
-            products.Add(p);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Товар успішно додано!");
-            Console.ResetColor();
-        }
-
-        static Product CreateProductFromInput()
-        {
-            int id = 0;
-            double price = 0.0;
-            int quantity = 0;
-
-            do 
-            {
-                Console.Write("ID (ціле число > 0): ");
-                string idInput = Console.ReadLine();
-                if (!int.TryParse(idInput, out id) || id <= 0)
-                {
-                    Console.WriteLine("Помилка. ID має бути додатним.");
-                }
-            } while (id <= 0);
-
+            Console.WriteLine("--- Додавання товару ---");
+            int id = GenerateNewId(PRODUCTS_FILE);
+            Console.WriteLine($"Присвоєно ID: {id}");
             Console.Write("Назва: ");
             string name = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(name)) name = "NoName";
+            double price;
+            while (true)
             {
-                name = "Без назви";
+                Console.Write("Ціна: ");
+                if (double.TryParse(Console.ReadLine(), NumberStyles.Any, CultureInfo.InvariantCulture, out price) && price >= 0) break;
+                Console.WriteLine("Помилка ціни.");
             }
-
-            do 
-            {
-                Console.Write("Ціна (грн): ");
-                string priceInput = Console.ReadLine();
-                if (!double.TryParse(priceInput, NumberStyles.Any, CultureInfo.InvariantCulture, out price) || price < 0)
-                {
-                    Console.WriteLine("Помилка. Ціна має бути числом >= 0.");
-                }
-            } while (price < 0);
-
-            do 
+            int quantity;
+            while (true)
             {
                 Console.Write("Кількість: ");
-                string qtyInput = Console.ReadLine();
-                if (!int.TryParse(qtyInput, out quantity) || quantity < 0)
+                if (int.TryParse(Console.ReadLine(), out quantity) && quantity >= 0) break;
+                Console.WriteLine("Помилка кількості.");
+            }
+            string line = $"{id},{name},{price.ToString(CultureInfo.InvariantCulture)},{quantity}\n";
+            File.AppendAllText(PRODUCTS_FILE, line);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Товар записано у файл!");
+            Console.ResetColor();
+            Pause();
+        }
+
+        static void ReadAndShowProducts()
+        {
+            Console.Clear();
+            Console.WriteLine("--- ТОВАРИ З ФАЙЛУ ---");
+            Console.WriteLine("------------------------------------------------------");
+            Console.WriteLine("| ID   | Назва           | Ціна       | Кількість |");
+            Console.WriteLine("------------------------------------------------------");
+
+            if (File.Exists(PRODUCTS_FILE))
+            {
+                string[] lines = File.ReadAllLines(PRODUCTS_FILE);
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    Console.WriteLine("Помилка. Кількість має бути цілим числом >= 0.");
+                    try
+                    {
+                        string[] parts = lines[i].Split(',');
+                        if (parts.Length < 4) continue;
+
+                        string id = parts[0];
+                        string name = parts[1];
+                        string price = parts[2];
+                        string qty = parts[3];
+
+                        Console.WriteLine($"| {id,-4} | {name,-15} | {price,10} | {qty,9} |");
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                 }
-            } while (quantity < 0);
-
-            return new Product(id, name, price, quantity);
+            }
+            else
+            {
+                Console.WriteLine("Файл відсутній.");
+            }
+            Console.WriteLine("------------------------------------------------------");
+            Pause();
         }
 
-        static void ShowProducts()
+        static void DeleteProductFromFile()
         {
             Console.Clear();
-            Console.WriteLine("--- СПИСОК ТОВАРІВ ---");
-
-            if (products.Count == 0)
-            {
-                Console.WriteLine("Список порожній.");
-                return;
-            }
-
-            Console.WriteLine("-----------------------------------------------------------------");
-            Console.WriteLine("| ID   | Назва           | Ціна (грн) | Кількість |");
-            Console.WriteLine("-----------------------------------------------------------------");
-            
-            foreach (var product in products)
-            {
-                product.Display();
-            }
-            Console.WriteLine("-----------------------------------------------------------------");
-            Console.WriteLine($"Всього елементів: {products.Count}");
-        }
-
-        static void SearchProductByName()
-        {
-            Console.Clear();
-            Console.WriteLine("--- Пошук товару ---");
-            Console.Write("Введіть назву (або частину) для пошуку: ");
-            string searchName = Console.ReadLine();
+            Console.WriteLine("--- Видалення товару ---");
+            Console.Write("Введіть ID для видалення: ");
+            string idToDelete = Console.ReadLine();
+            string[] lines = File.ReadAllLines(PRODUCTS_FILE);
+            List<string> newLines = new List<string>();
+            newLines.Add(lines[0]);
 
             bool found = false;
-            Console.WriteLine("\nРезультати пошуку:");
-            Console.WriteLine("-----------------------------------------------------------------");
-            
-            for (int i = 0; i < products.Count; i++)
+
+            for (int i = 1; i < lines.Length; i++)
             {
-                if (products[i].Name.Contains(searchName))
+                string[] parts = lines[i].Split(',');
+                if (parts[0] != idToDelete)
                 {
-                    products[i].Display();
+                    newLines.Add(lines[i]);
+                }
+                else
+                {
                     found = true;
                 }
             }
 
-            if (!found)
+            if (found)
             {
-                Console.WriteLine("Товарів не знайдено.");
+                File.WriteAllLines(PRODUCTS_FILE, newLines);
+                Console.WriteLine("Товар видалено.");
             }
-            Console.WriteLine("-----------------------------------------------------------------");
+            else
+            {
+                Console.WriteLine("ID не знайдено.");
+            }
+            Pause();
         }
 
-        static void DeleteProductById()
+        static void SearchInFile()
         {
             Console.Clear();
-            Console.WriteLine("--- Видалення товару ---");
-            Console.Write("Введіть ID товару для видалення: ");
+            Console.Write("Введіть назву для пошуку: ");
+            string searchName = Console.ReadLine().ToLower();
+
+            string[] lines = File.ReadAllLines(PRODUCTS_FILE);
             
-            if (int.TryParse(Console.ReadLine(), out int searchId))
+            Console.WriteLine("Результати:");
+            for (int i = 1; i < lines.Length; i++)
             {
-                int indexToDelete = -1;
-                
-                for (int i = 0; i < products.Count; i++)
+                string[] parts = lines[i].Split(',');
+                if (parts.Length >= 2)
                 {
-                    if (products[i].Id == searchId)
+                    if (parts[1].ToLower().Contains(searchName))
                     {
-                        indexToDelete = i;
-                        break;
+                        Console.WriteLine(lines[i]);
                     }
                 }
-
-                if (indexToDelete != -1)
-                {
-                    Console.WriteLine($"Видалено товар: {products[indexToDelete].Name}");
-                    products.RemoveAt(indexToDelete);
-                }
-                else
-                {
-                    Console.WriteLine("Товар з таким ID не знайдено.");
-                }
             }
-            else
-            {
-                Console.WriteLine("Некоректний ID.");
-            }
+            Pause();
         }
 
-        static void SortMenu()
+        static void FileStatistics()
         {
             Console.Clear();
-            Console.WriteLine("--- Сортування ---");
-            Console.WriteLine("1. Власний алгоритм (Bubble Sort) за ціною");
-            Console.WriteLine("2. Вбудований List.Sort за ціною");
-            Console.Write("Вибір: ");
-            string input = Console.ReadLine();
-
-            if (input == "1")
-            {
-                for (int i = 0; i < products.Count - 1; i++)
-                {
-                    for (int j = 0; j < products.Count - i - 1; j++)
-                    {
-                        if (products[j].Price > products[j + 1].Price)
-                        {
-                            Product temp = products[j];
-                            products[j] = products[j + 1];
-                            products[j + 1] = temp;
-                        }
-                    }
-                }
-                Console.WriteLine("Відсортовано бульбашкою.");
-            }
-            else if (input == "2")
-            {
-                products.Sort((p1, p2) => p1.Price.CompareTo(p2.Price));
-                Console.WriteLine("Відсортовано стандартним методом.");
-            }
-            else
-            {
-                Console.WriteLine("Невірний вибір.");
-            }
-        }
-
-        static void CalculateStatistics()
-        {
-            Console.Clear();
-            Console.WriteLine("--- ОБЧИСЛЕННЯ СТАТИСТИКИ ---");
-
-            if (products.Count == 0)
-            {
-                Console.WriteLine("Список порожній.");
-                return;
-            }
-
+            string[] lines = File.ReadAllLines(PRODUCTS_FILE);
+            
             double totalSum = 0;
-            double sumOfPrices = 0;
-            int countValidProducts = 0;
-            int countExpensive = 0;
+            int count = 0;
+            double maxPrice = 0;
             double minPrice = double.MaxValue;
-            double maxPrice = double.MinValue;
-            string cheapestProduct = "N/A";
-            string expensiveProduct = "N/A";
 
-            for (int i = 0; i < products.Count; i++)
+            for (int i = 1; i < lines.Length; i++)
             {
-                Product p = products[i];
-
-                if (p.Price <= 0 || p.Quantity <= 0)
+                try
                 {
-                    continue;
+                    string[] parts = lines[i].Split(',');
+                    double price = double.Parse(parts[2], CultureInfo.InvariantCulture);
+                    int qty = int.Parse(parts[3]);
+
+                    totalSum += price * qty;
+                    count++;
+
+                    if (price > maxPrice) maxPrice = price;
+                    if (price < minPrice) minPrice = price;
                 }
+                catch { continue; }
+            }
 
-                totalSum += p.Price * p.Quantity;
-                sumOfPrices += p.Price;
-                countValidProducts++;
+            if (minPrice == double.MaxValue) minPrice = 0;
 
-                if (p.Price > 50.00)
-                {
-                    countExpensive++;
-                }
+            Console.WriteLine($"Всього товарів: {count}");
+            Console.WriteLine($"Загальна вартість складу: {totalSum}");
+            Console.WriteLine($"Мін. ціна: {minPrice}");
+            Console.WriteLine($"Макс. ціна: {maxPrice}");
+            Pause();
+        }
 
-                if (p.Price < minPrice)
+        static void SortFile()
+        {
+            Console.WriteLine("Сортування за ціною...");
+            string[] lines = File.ReadAllLines(PRODUCTS_FILE);
+            List<string> dataLines = new List<string>();
+            for(int i = 1; i < lines.Length; i++)
+            {
+                if(!string.IsNullOrWhiteSpace(lines[i]))
+                    dataLines.Add(lines[i]);
+            }
+            for (int i = 0; i < dataLines.Count - 1; i++)
+            {
+                for (int j = 0; j < dataLines.Count - i - 1; j++)
                 {
-                    minPrice = p.Price;
-                    cheapestProduct = p.Name;
-                }
-                if (p.Price > maxPrice)
-                {
-                    maxPrice = p.Price;
-                    expensiveProduct = p.Name;
+                    double price1 = double.Parse(dataLines[j].Split(',')[2], CultureInfo.InvariantCulture);
+                    double price2 = double.Parse(dataLines[j+1].Split(',')[2], CultureInfo.InvariantCulture);
+
+                    if (price1 > price2)
+                    {
+                        string temp = dataLines[j];
+                        dataLines[j] = dataLines[j+1];
+                        dataLines[j+1] = temp;
+                    }
                 }
             }
-            
-            double averagePrice = countValidProducts > 0 ? sumOfPrices / countValidProducts : 0;
-            
-            Console.WriteLine("\n-------------------------------------------------");
-            Console.WriteLine("РЕЗУЛЬТАТИ ОБЧИСЛЕНЬ:");
-            Console.WriteLine("-------------------------------------------------");
-            Console.WriteLine($"Кількість товарів у списку: {products.Count}");
-            Console.WriteLine($"Загальна вартість усіх товарів: {totalSum:F2} грн");
-            Console.WriteLine($"Середня ціна товару: {averagePrice:F2} грн");
-            Console.WriteLine($"Товарів дорожче 50 грн: {countExpensive} шт.");
-            Console.WriteLine($"Найдешевший товар: {cheapestProduct} ({minPrice:F2} грн)");
-            Console.WriteLine($"Найдорожчий товар: {expensiveProduct} ({maxPrice:F2} грн)");
+            List<string> finalLines = new List<string>();
+            finalLines.Add(lines[0]);
+            finalLines.AddRange(dataLines);
+
+            File.WriteAllLines(PRODUCTS_FILE, finalLines);
+            Console.WriteLine("Файл відсортовано і перезаписано!");
+            Pause();
         }
 
         static void Pause()
