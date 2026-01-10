@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj": {}
+    "/Users/oleksii/Documents/OPAM/project5/..csproj": {}
   },
   "projects": {
-    "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj": {
+    "/Users/oleksii/Documents/OPAM/project5/..csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj",
-        "projectName": ".",
-        "projectPath": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\..csproj",
-        "packagesPath": "C:\\Users\\kirik\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kirik\\OneDrive\\Рабочий стол\\project5\\obj\\",
+        "projectUniqueName": "/Users/oleksii/Documents/OPAM/project5/..csproj",
+        "projectName": "HomeAppliancesStore",
+        "projectPath": "/Users/oleksii/Documents/OPAM/project5/..csproj",
+        "packagesPath": "/Users/oleksii/.nuget/packages/",
+        "outputPath": "/Users/oleksii/Documents/OPAM/project5/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\kirik\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/oleksii/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -59,7 +59,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
